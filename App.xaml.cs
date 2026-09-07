@@ -24,7 +24,8 @@ namespace ScreenShot
             base.OnStartup(e);
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-            _messageWindow = new MessageWindow();
+            _hotkeyConfig = HotkeyConfig.Load();
+            _messageWindow = new MessageWindow(_hotkeyConfig);
             _messageWindow.HotKeyPressed += StartCapture;
             CreateTrayIcon();
         }
@@ -52,6 +53,8 @@ namespace ScreenShot
 
             var menu = new System.Windows.Forms.ContextMenuStrip();
             menu.Items.Add("截图", null, (s, ev) => StartCapture());
+            menu.Items.Add("设置快捷键", null, (s, ev) => ShowHotkeySetting());
+            menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
             menu.Items.Add("退出", null, (s, ev) => Shutdown());
             _trayIcon.ContextMenuStrip = menu;
             _trayIcon.MouseClick += (s, ev) =>
@@ -59,10 +62,30 @@ namespace ScreenShot
                 if (ev.Button == System.Windows.Forms.MouseButtons.Left)
                     StartCapture();
             };
+
+            UpdateTrayTooltip();
+        }
+
+        private void ShowHotkeySetting()
+        {
+            var dlg = new HotkeySettingWindow(_hotkeyConfig);
+            dlg.Owner = null;
+            if (dlg.ShowDialog() == true)
+            {
+                _hotkeyConfig = dlg.Config;
+                _messageWindow.UpdateHotkey(_hotkeyConfig);
+                UpdateTrayTooltip();
+            }
+        }
+
+        private void UpdateTrayTooltip()
+        {
+            _trayIcon.Text = $"截图工具\n快捷键: {_hotkeyConfig.DisplayText}";
         }
 
         private System.Windows.Forms.NotifyIcon _trayIcon;
         private MessageWindow _messageWindow;
+        private HotkeyConfig _hotkeyConfig;
         private bool _isCapturing;
 
         private void StartCapture()
@@ -116,7 +139,7 @@ namespace ScreenShot
             private readonly System.Windows.Interop.HwndSource _source;
             private readonly IntPtr _hwnd;
 
-            public MessageWindow()
+            public MessageWindow(HotkeyConfig config)
             {
                 var param = new System.Windows.Interop.HwndSourceParameters("ScreenShot_Hotkey")
                 {
@@ -130,8 +153,19 @@ namespace ScreenShot
                 _hwnd = _source.Handle;
                 _source.AddHook(WndProc);
 
+                RegisterHotkey(config);
+            }
+
+            public void UpdateHotkey(HotkeyConfig config)
+            {
+                NativeMethods.UnregisterHotKey(_hwnd, NativeMethods.HOTKEY_ID);
+                RegisterHotkey(config);
+            }
+
+            private void RegisterHotkey(HotkeyConfig config)
+            {
                 NativeMethods.RegisterHotKey(_hwnd, NativeMethods.HOTKEY_ID,
-                    NativeMethods.MOD_CTRL | NativeMethods.MOD_SHIFT, 0x41);
+                    config.GetModifiers(), config.GetKeyCode());
             }
 
             private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)

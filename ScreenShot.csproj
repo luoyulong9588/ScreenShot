@@ -66,6 +66,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
+    <Page Include="HotkeySettingWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
@@ -76,6 +80,13 @@
     </Compile>
     <Compile Include="AnnotationWindow.xaml.cs">
       <DependentUpon>AnnotationWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HotkeySettingWindow.xaml.cs">
+      <DependentUpon>HotkeySettingWindow.xaml</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="HotkeyConfig.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="NativeMethods.cs">
